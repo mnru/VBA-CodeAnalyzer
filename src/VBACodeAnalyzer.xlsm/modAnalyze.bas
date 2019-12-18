@@ -8,17 +8,15 @@ Sub analyzeOtherBook()
     
     Set fso = CreateObject("Scripting.FileSystemObject")
     
-    bn = fso.getfilename(pn)
+    bn = fso.getFilename(pn)
     
-    Workbooks.Open pn
+    Workbooks.Open (pn)
     
     analyzeCode (bn)
     
     On Error Resume Next
     
     Application.DisplayAlerts = False
-    
-    
     Workbooks(bn).Close
     Application.DisplayAlerts = True
     
@@ -27,7 +25,6 @@ End Sub
 Sub analyzeCode(Optional bn = "")
     
     If bn = "" Then bn = ThisWorkbook.Name
-    
     
     
     Dim currentRow        As Long
@@ -123,15 +120,10 @@ Sub analyzeCode(Optional bn = "")
     
     If bn <> ThisWorkbook.Name Then
         
-        
-        
-        
-        
         Application.DisplayAlerts = False
         
         Worksheets(sn).Copy
         
-        ' Workbooks(bn).Close
         Application.DisplayAlerts = True
     End If
     
@@ -144,6 +136,7 @@ Function tryToGetProcLineNum(cmp, procName, Optional knd = 0)
     tryToGetProcLineNum = ret
     
 End Function
+
 Function getModType(cmp)
     Dim ret
     Select Case cmp.Type
@@ -178,17 +171,13 @@ Function getDef(cmp, procName, Optional knd = 0)
     
     getDef = ret
 End Function
+
 Sub writeData(procCnt, mdlName, procLineNum, procName, strDef, sn, currentRow, codelineCnt)
-    
-    'abn = ActiveWorkbook.Name
-    'ThisWorkbook.Activate
     
     procCnt = procCnt + 1
     ary = Array(procCnt, mdlName, procLineNum, procName, strDef)
     Worksheets(sn).Cells(currentRow, 9).Resize(1, 5) = ary
     codelineCnt = codelineCnt + procLineNum
     currentRow = currentRow + 1
-    
-    'Workbooks(abn).Activate
     
 End Sub
