@@ -1,5 +1,5 @@
 Attribute VB_Name = "modAnalyze"
-
+Option Base 0
 Sub analyzeOtherBook()
     
     pn = Application.GetOpenFilename("excel macro book,*.xlsm,all file,*.*", , "select workbook to analyze")
@@ -33,11 +33,11 @@ Sub analyzeCode(Optional bn = "")
     Dim propertyCnt       As Long
     
     Dim mdlName        As String
-    Dim procName 'As String
+    Dim procName
     Dim procLineNum    As Long
     Dim mdlLineNum     As Long
     Dim declareLineNum As Long
-    Dim strDef         As String
+    Dim defInfo
     Dim lineCnt        As Long
     
     Workbooks(bn).Activate
@@ -86,8 +86,8 @@ Sub analyzeCode(Optional bn = "")
                         If procLineNum = 0 Then
                             Call dic.Add(procName, Null)
                         Else
-                            strDef = getDef(cmp, procName)
-                            Call writeData(procCnt, mdlName, procLineNum, procName, strDef, sn, currentRow, codelineCnt)
+                            defInfo = getDef(cmp, procName)
+                            Call writeData(procCnt, mdlName, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
                         End If
                     End If
                 Next lineCnt
@@ -99,8 +99,8 @@ Sub analyzeCode(Optional bn = "")
                         procLineNum = tryToGetProcLineNum(cmp, procName, knd)
                         
                         If procLineNum <> 0 Then
-                            strDef = getDef(cmp, procName, knd)
-                            Call writeData(procCnt, mdlName, procLineNum, procName, strDef, sn, currentRow, codelineCnt)
+                            defInfo = getDef(cmp, procName, knd)
+                            Call writeData(procCnt, mdlName, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
                             propertyCnt = propertyCnt + 1
                         End If
                         
@@ -153,30 +153,32 @@ Function getDef(cmp, procName, Optional knd = 0)
     With cmp.CodeModule
         lineDef = .procBodyLine(procName, knd)
         lineEnd = .ProcCountLines(procName, knd) + .ProcStartLine(procName, knd)
-        Do While lineDef < lineEnd
+        cnt = 0
+        Do While lineDef + cnt < lineEnd
             
-            strLine = Trim(.Lines(lineDef, 1))
-            
+            strLine = Trim(.Lines(lineDef + cnt, 1))
+            cnt = cnt + 1
             If strLine Like "* _" Then
+
                 ret = ret & Left(strLine, Len(strLine) - 1)
             Else
                 ret = ret & strLine
                 Exit Do
             End If
             
-            lineDef = lineDef + 1
+            
         Loop
         
     End With
     
-    getDef = ret
+    getDef = Array(cnt, ret)
 End Function
 
-Sub writeData(procCnt, mdlName, procLineNum, procName, strDef, sn, currentRow, codelineCnt)
+Sub writeData(procCnt, mdlName, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
     
     procCnt = procCnt + 1
-    ary = Array(procCnt, mdlName, procLineNum, procName, strDef)
-    Worksheets(sn).Cells(currentRow, 9).Resize(1, 5) = ary
+    ary = Array(procCnt, mdlName, procLineNum, procName, defInfo(0), defInfo(1))
+    Worksheets(sn).Cells(currentRow, 9).Resize(1, 6) = ary
     codelineCnt = codelineCnt + procLineNum
     currentRow = currentRow + 1
     
