@@ -1,0 +1,12 @@
+<customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui">
+	<ribbon startFromScratch="false">
+		<tabs>
+			<tab id="customTab" label="CodeAnalyzer">
+				<group id="customGroup" label="Analyze">
+					<button id="customButton1" label="this book" imageMso="HappyFace" size="large" onAction="analyzeCode" />
+					<button id="customButton2" label="other book" imageMso="HappyFace" size="large" onAction="analyzeOtherBook" />	
+				</group>
+			</tab>
+		</tabs>
+	</ribbon>
+</customUI>
