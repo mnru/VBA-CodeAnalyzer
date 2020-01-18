@@ -20,13 +20,13 @@ Sub analyzeCode(Optional bn = "")
     Dim currentSummaryRow As Long
     Dim procCnt           As Long
     Dim propertyCnt       As Long
-    Dim mdlName           As String
+    Dim mdlName        As String
     Dim procName
-    Dim procLineNum       As Long
-    Dim mdlLineNum        As Long
-    Dim declareLineNum    As Long
+    Dim procLineNum    As Long
+    Dim mdlLineNum     As Long
+    Dim declareLineNum As Long
     Dim defInfo
-    Dim lineCnt           As Long
+    Dim lineCnt        As Long
     Workbooks(bn).Activate
     Sheets.Add
     sn = ActiveSheet.Name
@@ -65,7 +65,7 @@ Sub analyzeCode(Optional bn = "")
                     End If
                 Next lineCnt
                 propertyCnt = 0
-                For Each procName In dic.keys
+                For Each procName In dic.Keys
                     For knd = 1 To 3
                         procLineNum = tryToGetProcLineNum(cmp, procName, knd)
                         If procLineNum <> 0 Then
