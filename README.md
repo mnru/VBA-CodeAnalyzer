@@ -1,7 +1,7 @@
 # VBA-CodeAnalyzer
 this code can extract macro's information from Excel Workbook.
 
-In immediateWindow,type "analyzeOtherBook" or "analyzeCode"(analyze the workbook itself).
+In the "CodeAnalyzer" Ribbon, click  "this Book" or "other Book" button.
 
 screen shot
 
