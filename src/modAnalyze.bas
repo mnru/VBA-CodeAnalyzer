@@ -1,21 +1,22 @@
 Attribute VB_Name = "modAnalyze"
 Option Base 0
+Sub analyzeOtherBook(thisRibbon)
 
-Sub analyzeOtherBook()
     pn = Application.GetOpenFilename("excel macro book,*.xlsm,all file,*.*", , "select workbook to analyze")
     If pn = "False" Then Exit Sub
     Set fso = CreateObject("Scripting.FileSystemObject")
     bn = fso.getFilename(pn)
     Workbooks.Open (pn)
-    analyzeCode (bn)
+  Call analyzeCode(thisRibon, True)
     On Error Resume Next
     Application.DisplayAlerts = False
     Workbooks(bn).Close
     Application.DisplayAlerts = True
 End Sub
 
-Sub analyzeCode(Optional bn = "")
-    If bn = "" Then bn = ThisWorkbook.Name
+Sub analyzeCode(thisRibbon, Optional otherbook = False)
+bn = ActiveWorkbook.Name
+
     Dim currentRow        As Long
     Dim currentSummaryRow As Long
     Dim procCnt           As Long
@@ -70,7 +71,7 @@ Sub analyzeCode(Optional bn = "")
                         procLineNum = tryToGetProcLineNum(cmp, procName, knd)
                         If procLineNum <> 0 Then
                             defInfo = getDef(cmp, procName, knd)
-                            Call writeData(procCnt, mdlName, procLineNum, procName & " " & getKndName(knd), defInfo, sn, currentRow, codelineCnt)
+                            Call writeData(procCnt, mdlName, procLineNum, getKndName(knd) & " " & procName, defInfo, sn, currentRow, codelineCnt)
                             propertyCnt = propertyCnt + 1
                         End If
                     Next knd
@@ -81,7 +82,7 @@ Sub analyzeCode(Optional bn = "")
             End If
         End With
     Next cmp
-    If bn <> ThisWorkbook.Name Then
+    If otherbook Then
         Application.DisplayAlerts = False
         Worksheets(sn).Copy
         Application.DisplayAlerts = True
