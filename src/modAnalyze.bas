@@ -34,9 +34,9 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
     Range("a1") = bn
     currentRow = 3
     currentSummaryRow = 3
-    aryTittle = Array("No", "module", "lines", "fun/sub", "def line", "lines", "multi", "signature")
+    aryTittle = Array("No", "module", "lines", "fun/sub", "def line", "lines", "multi", "signature", "proc", "arg", "return type")
     arySummaryTitle = Array("module", "type", "fun/sub", "(property)", "total lines", "(declaration)", "(procedures)")
-    Worksheets(sn).Cells(currentRow, 9).Resize(1, 8) = aryTittle
+    Worksheets(sn).Cells(currentRow, 9).Resize(1, 11) = aryTittle
     Worksheets(sn).Cells(currentRow, 1).Resize(1, 7) = arySummaryTitle
     currentRow = currentRow + 1
     currentSummaryRow = currentSummaryRow + 1
@@ -121,18 +121,45 @@ Function analyzeSignature(str, fn)
     
     str0 = Mid(str, n2 + 1, n0 - n2 - n3)
     
-    
-    ary = Split(str0, ",")
-    For i = LBound(ary) To UBound(ary)
-        ary(i) = Trim(ary(i))
-    Next
-    p2 = Join(ary, vbLf)
-    'p2 = str0
+    p2 = splitQuotation(str0, ",", vbLf)
     ret = Array(p1, p2, p3)
     
     analyzeSignature = ret
     Set reg = Nothing
     Set mc = Nothing
+End Function
+
+Function splitQuotation(str1, str2, str3)
+    
+    ret = ""
+    tmp = ""
+    xs = Split(str1, str2)
+    For Each x In xs
+        If tmp <> "" Then
+            tmp = tmp & str2 & x
+            n0 = countStr(tmp, """")
+            If n0 Mod 2 = 0 Then
+                If ret <> "" Then ret = ret & str3
+                ret = ret & Trim(tmp)
+                tmp = ""
+            End If
+        Else
+            n = countStr(x, """")
+            If n Mod 2 = 0 Then
+                If ret <> "" Then ret = ret & str3
+                ret = ret & Trim(x)
+            Else
+                tmp = x
+            End If
+        End If
+    Next x
+    splitQuotation = ret
+    
+End Function
+
+Function countStr(str1, str2)
+    ret = Len(str1) - Len(Replace(str1, str2, ""))
+    countStr = ret
 End Function
 
 Function tryToGetProcLineNum(cmp, procName, Optional knd = 0)
@@ -197,10 +224,12 @@ Sub writeData(procCnt, mdlName, procLineNum, procName, ByVal defInfo, sn, curren
     procCnt = procCnt + 1
     df = defInfo
     parts = analyzeSignature(df(3), procName)
-    
-    
     ary = Array(procCnt, mdlName, procLineNum, procName, df(0), df(1), df(2), df(3), parts(0), parts(1), parts(2))
     Worksheets(sn).Cells(currentRow, 9).Resize(1, 11) = ary
     codelineCnt = codelineCnt + procLineNum
     currentRow = currentRow + 1
 End Sub
+
+
+
+
