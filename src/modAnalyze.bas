@@ -1,13 +1,13 @@
 Attribute VB_Name = "modAnalyze"
 Option Base 0
 Sub analyzeOtherBook(thisRibbon)
-
+    
     pn = Application.GetOpenFilename("excel macro book,*.xlsm,all file,*.*", , "select workbook to analyze")
     If pn = "False" Then Exit Sub
     Set fso = CreateObject("Scripting.FileSystemObject")
     bn = fso.getFilename(pn)
     Workbooks.Open (pn)
-  Call analyzeCode(thisRibon, True)
+    Call analyzeCode(thisRibon, True)
     On Error Resume Next
     Application.DisplayAlerts = False
     Workbooks(bn).Close
@@ -15,8 +15,8 @@ Sub analyzeOtherBook(thisRibbon)
 End Sub
 
 Sub analyzeCode(thisRibbon, Optional otherbook = False)
-bn = ActiveWorkbook.Name
-
+    bn = ActiveWorkbook.Name
+    
     Dim currentRow        As Long
     Dim currentSummaryRow As Long
     Dim procCnt           As Long
@@ -41,6 +41,7 @@ bn = ActiveWorkbook.Name
     currentRow = currentRow + 1
     currentSummaryRow = currentSummaryRow + 1
     Workbooks(bn).Activate
+    
     On Error Resume Next
     For Each cmp In ActiveWorkbook.VBProject.VBComponents
         With cmp.CodeModule
@@ -71,7 +72,8 @@ bn = ActiveWorkbook.Name
                         procLineNum = tryToGetProcLineNum(cmp, procName, knd)
                         If procLineNum <> 0 Then
                             defInfo = getDef(cmp, procName, knd)
-                            Call writeData(procCnt, mdlName, procLineNum, getKndName(knd) & " " & procName, defInfo, sn, currentRow, codelineCnt)
+                            'Call writeData(procCnt, mdlName, procLineNum, getKndName(knd) & " " & procName, defInfo, sn, currentRow, codelineCnt)
+                            Call writeData(procCnt, mdlName, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
                             propertyCnt = propertyCnt + 1
                         End If
                     Next knd
@@ -89,35 +91,49 @@ bn = ActiveWorkbook.Name
     End If
 End Sub
 
-    Function analyzeSignature(str, fn)
-        Dim ret, ary
-        Set reg = CreateObject("VBScript.RegExp")
-        With reg
-            .Pattern = "^\s*([^\(]+)\s+" & fn & "\((.*)\)(\s+As\s+)*(\S+)*\s*$"
-            .IgnoreCase = False
-            .Global = False
-        End With
-        Dim mc As Variant
+Function analyzeSignature(str, fn)
+    Dim reg, mc, n0, n1, n2, p1, p2, p3, str0, ary
+    n0 = Len(str)
+    n1 = InStr(str, fn & "(")
+    n2 = n1 + Len(fn)
+    p1 = Trim(Left(str, n1 - 1))
+    'p1 = Left(str, n2)
     
-        Set mc = reg.Execute(str)
-        If mc.Count > 0 Then
-            str0 = mc(0).submatches(1)
-            ary = Split(str0, ",")
-            For i = LBound(ary) To UBound(ary)
-            ary(i) = Trim(ary(i))
-            Next
-            
-           ret = Array(mc(0).submatches(0), Join(ary, vbLf), mc(0).submatches(3))
-        Else
-            ret = False
-        End If
-        analyzeSignature = ret
-    End Function
-
-
-
-
-
+    
+    Set reg = CreateObject("VBScript.RegExp")
+    With reg
+        .Pattern = "\)\s+As\s+([^$s\(\)]+(\(\))?)\s*$"
+     '       .Pattern = "^\s*([^\(]+)\s+" & fn & "\((.*)\)(\s+As\s+)*(\S+)*\s*$"
+        
+        .IgnoreCase = False
+        .Global = False
+    End With
+    
+    Set mc = reg.Execute(str)
+    If mc.Count = 0 Then
+        n3 = 1
+        p3 = ""
+    Else
+        n3 = Len(mc(0))
+        p3 = mc(0).submatches(0)
+ '       p3 = mc(0)
+    End If
+    
+    str0 = Mid(str, n2 + 1, n0 - n2 - n3)
+    
+    
+    ary = Split(str0, ",")
+    For i = LBound(ary) To UBound(ary)
+        ary(i) = Trim(ary(i))
+    Next
+    p2 = Join(ary, vbLf)
+    'p2 = str0
+    ret = Array(p1, p2, p3)
+    
+    analyzeSignature = ret
+    Set reg = Nothing
+    Set mc = Nothing
+End Function
 
 Function tryToGetProcLineNum(cmp, procName, Optional knd = 0)
     On Error Resume Next
@@ -165,7 +181,7 @@ Function getDef(cmp, procName, Optional knd = 0)
         Loop
         x = InStr(ret, ":")
         If x > 0 Then
-         ret = Left(ret, x - 1)
+            ret = Left(ret, x - 1)
             multi = True
         Else
             multi = False
@@ -173,17 +189,18 @@ Function getDef(cmp, procName, Optional knd = 0)
         
     End With
     
-    sg = analyzeSignature(ret, procName)
-    getDef = Array(lineDef, cnt, multi, ret, sg(0), sg(1), sg(2))
+    getDef = Array(lineDef, cnt, multi, ret)
 End Function
 
-Sub writeData(procCnt, mdlName, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
+Sub writeData(procCnt, mdlName, procLineNum, procName, ByVal defInfo, sn, currentRow, codelineCnt)
+    Dim parts, df
     procCnt = procCnt + 1
-    ary = Array(procCnt, mdlName, procLineNum, procName, defInfo(0), defInfo(1), defInfo(2), defInfo(3), defInfo(4), defInfo(5), defInfo(6))
+    df = defInfo
+    parts = analyzeSignature(df(3), procName)
+    
+    
+    ary = Array(procCnt, mdlName, procLineNum, procName, df(0), df(1), df(2), df(3), parts(0), parts(1), parts(2))
     Worksheets(sn).Cells(currentRow, 9).Resize(1, 11) = ary
     codelineCnt = codelineCnt + procLineNum
     currentRow = currentRow + 1
 End Sub
-
-
-
