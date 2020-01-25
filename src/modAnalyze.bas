@@ -34,9 +34,11 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
     Range("a1") = bn
     currentRow = 3
     currentSummaryRow = 3
-    aryTittle = Array("No", "module", "lines", "fun/sub", "def line", "lines", "multi", "signature", "proc", "arg", "return type")
+    arynum = 11
+    aryTittle = Array("module", "(type)", "lines", "proc", "name", "arg", "return type", "", "def line", "lines", "multi", "signature")
     arySummaryTitle = Array("module", "type", "fun/sub", "(property)", "total lines", "(declaration)", "(procedures)")
-    Worksheets(sn).Cells(currentRow, 9).Resize(1, 11) = aryTittle
+      arynum = UBound(aryTittle) - LBound(aryTittle) + 1
+    Worksheets(sn).Cells(currentRow, 9).Resize(1, arynum) = aryTittle
     Worksheets(sn).Cells(currentRow, 1).Resize(1, 7) = arySummaryTitle
     currentRow = currentRow + 1
     currentSummaryRow = currentSummaryRow + 1
@@ -62,7 +64,7 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
                             Call dic.Add(procName, Null)
                         Else
                             defInfo = getDef(cmp, procName)
-                            Call writeData(procCnt, mdlName, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
+                            Call writeData(procCnt, mdlName, mdlType, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
                         End If
                     End If
                 Next lineCnt
@@ -72,23 +74,36 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
                         procLineNum = tryToGetProcLineNum(cmp, procName, knd)
                         If procLineNum <> 0 Then
                             defInfo = getDef(cmp, procName, knd)
-                            'Call writeData(procCnt, mdlName, procLineNum, getKndName(knd) & " " & procName, defInfo, sn, currentRow, codelineCnt)
-                            Call writeData(procCnt, mdlName, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
+                            Call writeData(procCnt, mdlName, mdlType, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
                             propertyCnt = propertyCnt + 1
                         End If
                     Next knd
                 Next
                 arySummary = Array(mdlName, mdlType, procCnt, propertyCnt, mdlLineNum, declareLineNum, codelineCnt)
+               
                 Worksheets(sn).Cells(currentSummaryRow, 1).Resize(1, 7) = arySummary
                 currentSummaryRow = currentSummaryRow + 1
             End If
         End With
     Next cmp
+    
+    Call prettyDisplay(sn)
+    
+    
     If otherbook Then
         Application.DisplayAlerts = False
         Worksheets(sn).Copy
         Application.DisplayAlerts = True
     End If
+End Sub
+
+Sub prettyDisplay(sn)
+    
+    With Sheets(sn)
+     Call .ListObjects.Add(xlSrcRange, .Cells(3, 1).CurrentRegion, , xlYes)
+     Call .ListObjects.Add(xlSrcRange, .Cells(3, 9).CurrentRegion, , xlYes)
+        
+    End With
 End Sub
 
 Function analyzeSignature(str, fn)
@@ -98,12 +113,9 @@ Function analyzeSignature(str, fn)
     n2 = n1 + Len(fn)
     p1 = Trim(Left(str, n1 - 1))
     'p1 = Left(str, n2)
-    
-    
     Set reg = CreateObject("VBScript.RegExp")
     With reg
-        .Pattern = "\)\s+As\s+([^$s\(\)]+(\(\))?)\s*$"
-     '       .Pattern = "^\s*([^\(]+)\s+" & fn & "\((.*)\)(\s+As\s+)*(\S+)*\s*$"
+        .Pattern = "\)\s+As\s+([^\(\)\s]+(\(\))?)s*$"
         
         .IgnoreCase = False
         .Global = False
@@ -113,10 +125,11 @@ Function analyzeSignature(str, fn)
     If mc.Count = 0 Then
         n3 = 1
         p3 = ""
+       ' p3 = Right(str, 1)
     Else
         n3 = Len(mc(0))
         p3 = mc(0).submatches(0)
- '       p3 = mc(0)
+        'p3 = mc(0)
     End If
     
     str0 = Mid(str, n2 + 1, n0 - n2 - n3)
@@ -215,21 +228,18 @@ Function getDef(cmp, procName, Optional knd = 0)
         End If
         
     End With
-    
+    ret = Trim(ret)
     getDef = Array(lineDef, cnt, multi, ret)
 End Function
 
-Sub writeData(procCnt, mdlName, procLineNum, procName, ByVal defInfo, sn, currentRow, codelineCnt)
+Sub writeData(procCnt, mdlName, mdlType, procLineNum, procName, ByVal defInfo, sn, currentRow, codelineCnt)
     Dim parts, df
     procCnt = procCnt + 1
     df = defInfo
     parts = analyzeSignature(df(3), procName)
-    ary = Array(procCnt, mdlName, procLineNum, procName, df(0), df(1), df(2), df(3), parts(0), parts(1), parts(2))
-    Worksheets(sn).Cells(currentRow, 9).Resize(1, 11) = ary
+    ary = Array(mdlName, mdlType, procLineNum, parts(0), procName, parts(1), parts(2), "", df(0), df(1), df(2), df(3))
+    arynum = UBound(ary) - LBound(ary) + 1
+    Worksheets(sn).Cells(currentRow, 9).Resize(1, arynum) = ary
     codelineCnt = codelineCnt + procLineNum
     currentRow = currentRow + 1
 End Sub
-
-
-
-
