@@ -2,7 +2,7 @@
 'Tear down ExcelAddIn
 '=========================================================================================
 
-Const FILLE_NAME="VBACodeAnalyzer.xlam"
+Const FILLE_NAME="VBA-CodeAnalyzer.xlam"
 
 Call Exec
 

@@ -58,7 +58,6 @@ Sub composeAll()
   binPath = oFso.buildPath(parentPath, "bin")
   If Not oFso.FolderExists(binPath) Then oFso.createFolder (binPath)
   targetPath = oFso.buildPath(binPath, targetName)
-msgbox targetpath
   If oFso.FileExists(targetPath) Then
       If clean Then Call cleanAll(targetPath)
   Else
@@ -177,7 +176,6 @@ Sub addAll(sourcePath, targetPath)
 
   On Error Resume Next
   Set targetBook = oApp.Workbooks.Open(targetPath)
- msgbox targetPath
   Set cmps = targetBook.VBProject.VBComponents
   Set oFdr = oFso.getFolder(sourcePath)
  
