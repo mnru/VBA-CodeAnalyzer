@@ -34,9 +34,9 @@ bn = ActiveWorkbook.Name
     Range("a1") = bn
     currentRow = 3
     currentSummaryRow = 3
-    aryTittle = Array("No", "module", "lines", "fun/sub", "def line", "lines", "signature")
+    aryTittle = Array("No", "module", "lines", "fun/sub", "def line", "lines", "multi", "signature")
     arySummaryTitle = Array("module", "type", "fun/sub", "(property)", "total lines", "(declaration)", "(procedures)")
-    Worksheets(sn).Cells(currentRow, 9).Resize(1, 7) = aryTittle
+    Worksheets(sn).Cells(currentRow, 9).Resize(1, 8) = aryTittle
     Worksheets(sn).Cells(currentRow, 1).Resize(1, 7) = arySummaryTitle
     currentRow = currentRow + 1
     currentSummaryRow = currentSummaryRow + 1
@@ -89,6 +89,36 @@ bn = ActiveWorkbook.Name
     End If
 End Sub
 
+    Function analyzeSignature(str, fn)
+        Dim ret, ary
+        Set reg = CreateObject("VBScript.RegExp")
+        With reg
+            .Pattern = "^\s*([^\(]+)\s+" & fn & "\((.*)\)(\s+As\s+)*(\S+)*\s*$"
+            .IgnoreCase = False
+            .Global = False
+        End With
+        Dim mc As Variant
+    
+        Set mc = reg.Execute(str)
+        If mc.Count > 0 Then
+            str0 = mc(0).submatches(1)
+            ary = Split(str0, ",")
+            For i = LBound(ary) To UBound(ary)
+            ary(i) = Trim(ary(i))
+            Next
+            
+           ret = Array(mc(0).submatches(0), Join(ary, vbLf), mc(0).submatches(3))
+        Else
+            ret = False
+        End If
+        analyzeSignature = ret
+    End Function
+
+
+
+
+
+
 Function tryToGetProcLineNum(cmp, procName, Optional knd = 0)
     On Error Resume Next
     ret = 0
@@ -133,14 +163,27 @@ Function getDef(cmp, procName, Optional knd = 0)
                 Exit Do
             End If
         Loop
+        x = InStr(ret, ":")
+        If x > 0 Then
+         ret = Left(ret, x - 1)
+            multi = True
+        Else
+            multi = False
+        End If
+        
     End With
-    getDef = Array(lineDef, cnt, ret)
+    
+    sg = analyzeSignature(ret, procName)
+    getDef = Array(lineDef, cnt, multi, ret, sg(0), sg(1), sg(2))
 End Function
 
 Sub writeData(procCnt, mdlName, procLineNum, procName, defInfo, sn, currentRow, codelineCnt)
     procCnt = procCnt + 1
-    ary = Array(procCnt, mdlName, procLineNum, procName, defInfo(0), defInfo(1), defInfo(2))
-    Worksheets(sn).Cells(currentRow, 9).Resize(1, 7) = ary
+    ary = Array(procCnt, mdlName, procLineNum, procName, defInfo(0), defInfo(1), defInfo(2), defInfo(3), defInfo(4), defInfo(5), defInfo(6))
+    Worksheets(sn).Cells(currentRow, 9).Resize(1, 11) = ary
     codelineCnt = codelineCnt + procLineNum
     currentRow = currentRow + 1
 End Sub
+
+
+
