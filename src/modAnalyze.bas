@@ -35,7 +35,7 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
     currentRow = 3
     currentSummaryRow = 3
     arynum = 11
-    aryTittle = Array("module", "(type)", "lines", "proc", "name", "arg", "return type", "", "def line", "lines", "multi", "signature")
+    aryTittle = Array("module", "(type)", "lines", "proc", "name", "arg", "return type", "", "def line", "lines", "comment", "colon", "signature")
     arySummaryTitle = Array("module", "type", "fun/sub", "(property)", "total lines", "(declaration)", "(procedures)")
       arynum = UBound(aryTittle) - LBound(aryTittle) + 1
     Worksheets(sn).Cells(currentRow, 9).Resize(1, arynum) = aryTittle
@@ -98,6 +98,14 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
 End Sub
 
 Sub prettyDisplay(sn)
+   With Sheets(sn).Cells
+         .WrapText = False
+        .Columns.AutoFit
+        .Rows.AutoFit
+        .WrapText = True
+        .Columns.AutoFit
+        .Rows.AutoFit
+    End With
     
     With Sheets(sn)
      Call .ListObjects.Add(xlSrcRange, .Cells(3, 1).CurrentRegion, , xlYes)
@@ -142,24 +150,24 @@ Function analyzeSignature(str, fn)
     Set mc = Nothing
 End Function
 
-Function splitQuotation(str1, str2, str3)
+Function splitQuotation(str1, dlm0, dlm1)
     
     ret = ""
     tmp = ""
-    xs = Split(str1, str2)
+    xs = Split(str1, dlm0)
     For Each x In xs
         If tmp <> "" Then
-            tmp = tmp & str2 & x
+            tmp = tmp & dlm0 & x
             n0 = countStr(tmp, """")
             If n0 Mod 2 = 0 Then
-                If ret <> "" Then ret = ret & str3
+                If ret <> "" Then ret = ret & dlm1
                 ret = ret & Trim(tmp)
                 tmp = ""
             End If
         Else
             n = countStr(x, """")
             If n Mod 2 = 0 Then
-                If ret <> "" Then ret = ret & str3
+                If ret <> "" Then ret = ret & dlm1
                 ret = ret & Trim(x)
             Else
                 tmp = x
@@ -169,9 +177,45 @@ Function splitQuotation(str1, str2, str3)
     splitQuotation = ret
     
 End Function
+Function breakQuotation(str1, dlm0)
+    Dim ret As String
+    Dim flag As Boolean
+    Dim tmp As String
+    ret = ""
+    tmp = ""
+    Dim num, cnt
+    cnt = 0
+    xs = Split(str1, dlm0)
+    num = UBound(xs) - LBound(xs) + 1
+    For Each x In xs
+        cnt = cnt + 1
+        If tmp <> "" Then
+            tmp = tmp & dlm0 & x
+            n0 = countStr(tmp, """")
+            If n0 Mod 2 = 0 Then
+                If ret <> "" Then ret = ret & dlm0
+                ret = ret & Trim(tmp)
+                tmp = ""
+                Exit For
+            End If
+        Else
+            n = countStr(x, """")
+            If n Mod 2 = 0 Then
+                If ret <> "" Then ret = ret & dlm0
+                ret = ret & Trim(x)
+                Exit For
+            Else
+                tmp = x
+            End If
+        End If
+    Next x
+    flag = IIf(cnt = num, False, True)
+    breakQuotation = Array(ret, flag)
+    
+End Function
 
-Function countStr(str1, str2)
-    ret = Len(str1) - Len(Replace(str1, str2, ""))
+Function countStr(str1, dlm0)
+    ret = Len(str1) - Len(Replace(str1, dlm0, ""))
     countStr = ret
 End Function
 
@@ -219,25 +263,24 @@ Function getDef(cmp, procName, Optional knd = 0)
                 Exit Do
             End If
         Loop
-        x = InStr(ret, ":")
-        If x > 0 Then
-            ret = Left(ret, x - 1)
-            multi = True
-        Else
-            multi = False
-        End If
         
+        Dim x0, x1
+        x0 = breakQuotation(ret, "'")
+        x1 = breakQuotation(x0(0), ":")
+        flgComment = x0(1)
+        flgColon = x1(1)
+        ret = x1(0)
     End With
     ret = Trim(ret)
-    getDef = Array(lineDef, cnt, multi, ret)
+    getDef = Array(lineDef, cnt, flgComment, flgColon, ret)
 End Function
 
 Sub writeData(procCnt, mdlName, mdlType, procLineNum, procName, ByVal defInfo, sn, currentRow, codelineCnt)
     Dim parts, df
     procCnt = procCnt + 1
     df = defInfo
-    parts = analyzeSignature(df(3), procName)
-    ary = Array(mdlName, mdlType, procLineNum, parts(0), procName, parts(1), parts(2), "", df(0), df(1), df(2), df(3))
+    parts = analyzeSignature(df(4), procName)
+    ary = Array(mdlName, mdlType, procLineNum, parts(0), procName, parts(1), parts(2), "", df(0), df(1), df(2), df(3), df(4))
     arynum = UBound(ary) - LBound(ary) + 1
     Worksheets(sn).Cells(currentRow, 9).Resize(1, arynum) = ary
     codelineCnt = codelineCnt + procLineNum
