@@ -32,15 +32,15 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
     Workbooks(bn).Activate
     Sheets.Add
     sn = ActiveSheet.Name
-    Range("a1") = bn
     currentRow = 3
     currentSummaryRow = 3
     arynum = 11
-    aryTittle = Array("module", "(type)", "lines", "proc", "name", "arg", "return type", "", "def line", "lines", "comment", "colon", "signature")
-    arySummaryTitle = Array("module", "type", "fun/sub", "(property)", "total lines", "(declaration)", "(procedures)")
+    aryTittle = Array("module", "type", "lines", "proc", "name", "arg", "return", "", "def line", "lines", "comment", "colon", "signature")
+    arySummaryTitle = Array("module", "type", "proc", "[lsg]et", "lines") ', "(declaration)", "(procedures)")
     arynum = lenAry(aryTittle)
-    Worksheets(sn).Cells(currentRow, 9).Resize(1, arynum) = aryTittle
-    Worksheets(sn).Cells(currentRow, 1).Resize(1, 7) = arySummaryTitle
+    smrnum = lenAry(arySummaryTitle)
+    Worksheets(sn).Cells(currentRow, 7).Resize(1, arynum) = aryTittle
+    Worksheets(sn).Cells(currentRow, 1).Resize(1, smrnum) = arySummaryTitle
     currentRow = currentRow + 1
     currentSummaryRow = currentSummaryRow + 1
     Workbooks(bn).Activate
@@ -80,17 +80,18 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
                         End If
                     Next knd
                 Next
-                arySummary = Array(mdlName, mdlType, procCnt, propertyCnt, mdlLineNum, declareLineNum, codelineCnt)
+                arySummary = Array(mdlName, mdlType, procCnt, propertyCnt, mdlLineNum) ', declareLineNum, codelineCnt)
                 
-                Worksheets(sn).Cells(currentSummaryRow, 1).Resize(1, 7) = arySummary
+                Worksheets(sn).Cells(currentSummaryRow, 1).Resize(1, smrnum) = arySummary
                 currentSummaryRow = currentSummaryRow + 1
             End If
         End With
     Next cmp
     
     Call prettyDisplay(sn)
-    Range("A1").WrapText = False
     
+    Range("A1").WrapText = False
+    Range("a1") = bn
     
     If otherbook Then
         Application.DisplayAlerts = False
@@ -100,7 +101,14 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
 End Sub
 
 Sub prettyDisplay(sn)
+ 'this code is learned from 'https://qiita.com/Mikoshiba_Kyu/items/46b7243eb576848b3e55
+  ActiveWindow.DisplayGridlines = False
     With Sheets(sn).Cells
+        .Font.Name = "Meiryo UI"
+        .Font.Size = 9
+        .HorizontalAlignment = xlLeft
+        .VerticalAlignment = xlTop
+        
         .WrapText = False
         .Columns.AutoFit
         .Rows.AutoFit
@@ -111,7 +119,7 @@ Sub prettyDisplay(sn)
     
     With Sheets(sn)
         Call .ListObjects.Add(xlSrcRange, .Cells(3, 1).CurrentRegion, , xlYes)
-        Call .ListObjects.Add(xlSrcRange, .Cells(3, 9).CurrentRegion, , xlYes)
+        Call .ListObjects.Add(xlSrcRange, .Cells(3, 7).CurrentRegion, , xlYes)
         
     End With
 End Sub
@@ -255,7 +263,7 @@ Sub writeData(procCnt, mdlName, mdlType, procLineNum, procName, ByVal defInfo, s
     parts = analyzeSignature(df(4), procName)
     ary = Array(mdlName, mdlType, procLineNum, parts(0), procName, parts(1), parts(2), "", df(0), df(1), df(2), df(3), df(4))
     arynum = lenAry(ary)
-    Worksheets(sn).Cells(currentRow, 9).Resize(1, arynum) = ary
+    Worksheets(sn).Cells(currentRow, 7).Resize(1, arynum) = ary
     codelineCnt = codelineCnt + procLineNum
     currentRow = currentRow + 1
 End Sub
