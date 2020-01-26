@@ -37,7 +37,7 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
     arynum = 11
     aryTittle = Array("module", "(type)", "lines", "proc", "name", "arg", "return type", "", "def line", "lines", "comment", "colon", "signature")
     arySummaryTitle = Array("module", "type", "fun/sub", "(property)", "total lines", "(declaration)", "(procedures)")
-      arynum = UBound(aryTittle) - LBound(aryTittle) + 1
+    arynum = lenAry(aryTittle) - LBound(aryTittle) + 1
     Worksheets(sn).Cells(currentRow, 9).Resize(1, arynum) = aryTittle
     Worksheets(sn).Cells(currentRow, 1).Resize(1, 7) = arySummaryTitle
     currentRow = currentRow + 1
@@ -80,7 +80,7 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
                     Next knd
                 Next
                 arySummary = Array(mdlName, mdlType, procCnt, propertyCnt, mdlLineNum, declareLineNum, codelineCnt)
-               
+                
                 Worksheets(sn).Cells(currentSummaryRow, 1).Resize(1, 7) = arySummary
                 currentSummaryRow = currentSummaryRow + 1
             End If
@@ -88,6 +88,7 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
     Next cmp
     
     Call prettyDisplay(sn)
+    Range("A1").WrapText = False
     
     
     If otherbook Then
@@ -98,8 +99,8 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
 End Sub
 
 Sub prettyDisplay(sn)
-   With Sheets(sn).Cells
-         .WrapText = False
+    With Sheets(sn).Cells
+        .WrapText = False
         .Columns.AutoFit
         .Rows.AutoFit
         .WrapText = True
@@ -108,8 +109,8 @@ Sub prettyDisplay(sn)
     End With
     
     With Sheets(sn)
-     Call .ListObjects.Add(xlSrcRange, .Cells(3, 1).CurrentRegion, , xlYes)
-     Call .ListObjects.Add(xlSrcRange, .Cells(3, 9).CurrentRegion, , xlYes)
+        Call .ListObjects.Add(xlSrcRange, .Cells(3, 1).CurrentRegion, , xlYes)
+        Call .ListObjects.Add(xlSrcRange, .Cells(3, 9).CurrentRegion, , xlYes)
         
     End With
 End Sub
@@ -142,13 +143,49 @@ Function analyzeSignature(str, fn)
     
     str0 = Mid(str, n2 + 1, n0 - n2 - n3)
     
-    p2 = splitQuotation(str0, ",", vbLf)
+    'p2 = splitQuotation(str0, ",", vbLf)
+    p2s = rejoinWithQuotation(str0, ",", vbLf)
+    p2 = p2s(0)
+    
     ret = Array(p1, p2, p3)
     
     analyzeSignature = ret
     Set reg = Nothing
     Set mc = Nothing
 End Function
+
+Function rejoinWithQuotation(str1, dlm0, Optional dlm1 = "", Optional break As Boolean = True)
+    If dlm1 <> "" Then break = False
+    
+    Dim ret  As String
+    Dim tmp  As String
+    Dim flag As Boolean
+    Dim num, cnt, qcnt
+    xs = Split(str1, dlm0)
+    num = lenAry(xs)
+    ret = ""
+    tmp = ""
+    cnt = 0
+    qcnt = 0
+    
+    For i = LBound(xs) To UBound(xs)
+        cnt = cnt + 1
+        If tmp <> "" Then tmp = tmp & dlm0
+        tmp = tmp & xs(i)
+        qcnt = qcnt + countStr(xs(i), """")
+        If qcnt Mod 2 = 0 Then
+            tmp = Trim(tmp)
+            If ret <> "" Then ret = ret & dlm1
+            ret = ret & tmp
+            tmp = ""
+            If break Then Exit For
+        End If
+    Next i
+    flag = IIf(cnt = num, False, True)
+    rejoinWithQuotation = Array(ret, flag)
+    
+End Function
+
 
 Function splitQuotation(str1, dlm0, dlm1)
     
@@ -178,15 +215,15 @@ Function splitQuotation(str1, dlm0, dlm1)
     
 End Function
 Function breakQuotation(str1, dlm0)
-    Dim ret As String
+    Dim ret  As String
     Dim flag As Boolean
-    Dim tmp As String
+    Dim tmp  As String
     ret = ""
     tmp = ""
     Dim num, cnt
     cnt = 0
     xs = Split(str1, dlm0)
-    num = UBound(xs) - LBound(xs) + 1
+    num = lenAry(xs)
     For Each x In xs
         cnt = cnt + 1
         If tmp <> "" Then
@@ -267,6 +304,10 @@ Function getDef(cmp, procName, Optional knd = 0)
         Dim x0, x1
         x0 = breakQuotation(ret, "'")
         x1 = breakQuotation(x0(0), ":")
+'        x0 = rejoinWithQuotation(ret, "'")
+'        x1 = rejoinWithQuotation(x0(0), ":")
+'
+        
         flgComment = x0(1)
         flgColon = x1(1)
         ret = x1(0)
@@ -281,8 +322,15 @@ Sub writeData(procCnt, mdlName, mdlType, procLineNum, procName, ByVal defInfo, s
     df = defInfo
     parts = analyzeSignature(df(4), procName)
     ary = Array(mdlName, mdlType, procLineNum, parts(0), procName, parts(1), parts(2), "", df(0), df(1), df(2), df(3), df(4))
-    arynum = UBound(ary) - LBound(ary) + 1
+    arynum = lenAry(ary)
     Worksheets(sn).Cells(currentRow, 9).Resize(1, arynum) = ary
     codelineCnt = codelineCnt + procLineNum
     currentRow = currentRow + 1
 End Sub
+
+Private Function lenAry(ary)
+    lenAry = UBound(ary) - LBound(ary) + 1
+End Function
+
+
+
