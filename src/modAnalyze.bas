@@ -1,5 +1,6 @@
 Attribute VB_Name = "modAnalyze"
 Option Base 0
+
 Sub analyzeOtherBook(thisRibbon)
     
     pn = Application.GetOpenFilename("excel macro book,*.xlsm,all file,*.*", , "select workbook to analyze")
@@ -143,7 +144,6 @@ Function analyzeSignature(str, fn)
     
     str0 = Mid(str, n2 + 1, n0 - n2 - n3)
     
-    'p2 = splitQuotation(str0, ",", vbLf)
     p2s = rejoinWithQuotation(str0, ",", vbLf)
     p2 = p2s(0)
     
@@ -183,71 +183,6 @@ Function rejoinWithQuotation(str1, dlm0, Optional dlm1 = "", Optional break As B
     Next i
     flag = IIf(cnt = num, False, True)
     rejoinWithQuotation = Array(ret, flag)
-    
-End Function
-
-
-Function splitQuotation(str1, dlm0, dlm1)
-    
-    ret = ""
-    tmp = ""
-    xs = Split(str1, dlm0)
-    For Each x In xs
-        If tmp <> "" Then
-            tmp = tmp & dlm0 & x
-            n0 = countStr(tmp, """")
-            If n0 Mod 2 = 0 Then
-                If ret <> "" Then ret = ret & dlm1
-                ret = ret & Trim(tmp)
-                tmp = ""
-            End If
-        Else
-            n = countStr(x, """")
-            If n Mod 2 = 0 Then
-                If ret <> "" Then ret = ret & dlm1
-                ret = ret & Trim(x)
-            Else
-                tmp = x
-            End If
-        End If
-    Next x
-    splitQuotation = ret
-    
-End Function
-Function breakQuotation(str1, dlm0)
-    Dim ret  As String
-    Dim flag As Boolean
-    Dim tmp  As String
-    ret = ""
-    tmp = ""
-    Dim num, cnt
-    cnt = 0
-    xs = Split(str1, dlm0)
-    num = lenAry(xs)
-    For Each x In xs
-        cnt = cnt + 1
-        If tmp <> "" Then
-            tmp = tmp & dlm0 & x
-            n0 = countStr(tmp, """")
-            If n0 Mod 2 = 0 Then
-                If ret <> "" Then ret = ret & dlm0
-                ret = ret & Trim(tmp)
-                tmp = ""
-                Exit For
-            End If
-        Else
-            n = countStr(x, """")
-            If n Mod 2 = 0 Then
-                If ret <> "" Then ret = ret & dlm0
-                ret = ret & Trim(x)
-                Exit For
-            Else
-                tmp = x
-            End If
-        End If
-    Next x
-    flag = IIf(cnt = num, False, True)
-    breakQuotation = Array(ret, flag)
     
 End Function
 
@@ -302,11 +237,8 @@ Function getDef(cmp, procName, Optional knd = 0)
         Loop
         
         Dim x0, x1
-        x0 = breakQuotation(ret, "'")
-        x1 = breakQuotation(x0(0), ":")
-'        x0 = rejoinWithQuotation(ret, "'")
-'        x1 = rejoinWithQuotation(x0(0), ":")
-'
+        x0 = rejoinWithQuotation(ret, "'")
+        x1 = rejoinWithQuotation(x0(0), ":")
         
         flgComment = x0(1)
         flgColon = x1(1)
