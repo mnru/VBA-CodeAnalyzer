@@ -21,7 +21,6 @@ Sub Exec()
     '-- Set Path
     strAdPath = objExcel.Application.UserLibraryPath
     strMyPath = Replace(WScript.ScriptFullName, WScript.ScriptName, "")
-    strMyPath = objFileSys.BuildPath(strMyPath,"bin")
 
     strAdCp = objFileSys.BuildPath(strAdPath, FILLE_NAME)
     strMyCp = objFileSys.BuildPath(strMyPath, FILLE_NAME)

@@ -271,6 +271,3 @@ End Sub
 Private Function lenAry(ary)
     lenAry = UBound(ary) - LBound(ary) + 1
 End Function
-
-
-

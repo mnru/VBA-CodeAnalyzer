@@ -1,23 +1,26 @@
-Const isFixedMode = True
+Const fixedMode = True
+Const useExcelDialog = True
+Dim targetExt
+targetExt = "xlam"
 
 Const vbext_ct_StdModule = 1
 Const vbext_ct_ClassModule = 2
 Const vbext_ct_MSForm = 3
 Const vbext_ct_Document = 100
 
-Const xlExcel9795 = 43                    ' //.xls 97-2003 format in Excel 2003 or prev
-Const xlExcel8 = 56                       ' //.xls 97-2003 format in Excel 2007
-Const xlTemplate = 17                     ' //.xlt
-Const xlAddIn = 18                        ' //.xla
-Const xlExcel12 = 50                      ' //.xlsb
-Const xlOpenXMLWorkbookMacroEnabled = 52  ' //.xlsm
-Const xlOpenXMLTemplateMacroEnabled = 53  ' //.xltm
-Const xlOpenXMLAddIn = 55                 ' //.xlam
+Const xlExcel9795 = 43                   ' //.xls 97-2003 format in Excel 2003 or prev
+Const xlExcel8 = 56                      ' //.xls 97-2003 format in Excel 2007
+Const xlTemplate = 17                    ' //.xlt
+Const xlAddIn = 18                       ' //.xla
+Const xlExcel12 = 50                     ' //.xlsb
+Const xlOpenXMLWorkbookMacroEnabled = 52 ' //.xlsm
+Const xlOpenXMLTemplateMacroEnabled = 53 ' //.xltm
+Const xlOpenXMLAddIn = 55                ' //.xlam
 
 Call decomposeAll
 
 Sub decomposeAll()
-  'export excel macro module
+    'export excel macro module
     
     Dim oApp
     Dim oFso
@@ -41,14 +44,17 @@ Sub decomposeAll()
     oApp.DisplayAlerts = False
     oApp.EnableEvents = False
     
-    If isFixedMode Then
-        tmp = getFixedPath
+    If fixedMode Then
+        tmp = getFixedPath(targetExt)
         parentPath = tmp(0)
         sourcePath = tmp(1)
         targetPath = tmp(2)
     Else
-        targetPath = getFilePath
-        
+        If useExcelDialog Then
+            targetPath = getFilePathByExcel
+        Else
+            targetPath = getFilePath
+        End If
         If targetPath = "" Then
             MsgBox "exit this script"
             Exit Sub
@@ -58,7 +64,7 @@ Sub decomposeAll()
         bn = oFso.GetBaseName(targetPath)
         xn = oFso.GetExtensionName(targetPath)
         
-        If Left(xn, 3) <> "xls" Then
+        If Left(xn, 2) <> "xl" Then
             MsgBox "this file is not Excel File"
             Exit Sub
         End If
@@ -75,17 +81,17 @@ Sub decomposeAll()
     Set modules = TargetBook.VBProject.VBComponents
     
     For Each module In modules
-        ext = ""
+        mExt = ""
         If (module.Type = vbext_ct_ClassModule) Then
-            ext = "cls"
+            mExt = "cls"
         ElseIf (module.Type = vbext_ct_MSForm) Then
-            ext = "frm"
+            mExt = "frm"
         ElseIf (module.Type = vbext_ct_StdModule) Then
-            ext = "bas"
+            mExt = "bas"
         End If
         
-        If ext <> "" Then
-            sFilePath = oFso.buildPath(sourcePath, module.Name & "." & ext)
+        If mExt <> "" Then
+            sFilePath = oFso.buildPath(sourcePath, module.Name & "." & mExt)
             Call module.Export(sFilePath)
             
         End If
@@ -94,6 +100,22 @@ Sub decomposeAll()
     oApp.Quit
     MsgBox "Complete!"
 End Sub
+
+Function getFilePathByExcel()
+    On Error Resume Next
+    Set oApp = CreateObject("Excel.Application")
+    oApp.Visible = True
+    
+    ret = oApp.GetOpenFilename("All files,*.*", 1, "select file")
+    
+    If ret = False Then ret = ""
+    getFilePathByExcel = ret
+    oApp.Quit
+    
+    Set oApp = Nothing
+    
+End Function
+
 
 Function getFilePath()
     
@@ -118,7 +140,7 @@ Function getFilePath()
     
 End Function
 
-Function getFixedPath()
+Function getFixedPath(ext)
     Dim oFso
     Dim scriptPath
     Dim targetPath
@@ -130,7 +152,7 @@ Function getFixedPath()
     parentName = oFso.getFilename(parentPath)
     
     sourcePath = oFso.buildPath(parentPath, "src")
-    targetPath = oFso.buildPath(parentPath, "bin" & "\" & parentName & ".xlam")
+    targetPath = oFso.buildPath(parentPath, parentName & "." & ext)
     
     getFixedPath = Array(parentPath, sourcePath, targetPath)
 End Function
