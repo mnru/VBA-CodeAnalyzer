@@ -100,7 +100,7 @@ Sub analyzeCode(thisRibbon, Optional otherbook = False)
     End If
 End Sub
 
-Sub prettyDisplay(sn)
+Private Sub prettyDisplay(sn)
  'this code is learned from 'https://qiita.com/Mikoshiba_Kyu/items/46b7243eb576848b3e55
   ActiveWindow.DisplayGridlines = False
     With Sheets(sn).Cells
@@ -124,7 +124,7 @@ Sub prettyDisplay(sn)
     End With
 End Sub
 
-Function analyzeSignature(str, fn)
+Private Function analyzeSignature(str, fn)
     Dim reg, mc, n0, n1, n2, p1, p2, p3, str0, ary
     n0 = Len(str)
     n1 = InStr(str, fn & "(")
@@ -162,7 +162,7 @@ Function analyzeSignature(str, fn)
     Set mc = Nothing
 End Function
 
-Function rejoinWithQuotation(str1, dlm0, Optional dlm1 = "", Optional break As Boolean = True)
+Private Function rejoinWithQuotation(str1, dlm0, Optional dlm1 = "", Optional break As Boolean = True)
     If dlm1 <> "" Then break = False
     
     Dim ret  As String
@@ -194,19 +194,19 @@ Function rejoinWithQuotation(str1, dlm0, Optional dlm1 = "", Optional break As B
     
 End Function
 
-Function countStr(str1, dlm0)
+Private Function countStr(str1, dlm0)
     ret = Len(str1) - Len(Replace(str1, dlm0, ""))
     countStr = ret
 End Function
 
-Function tryToGetProcLineNum(cmp, procName, Optional knd = 0)
+Private Function tryToGetProcLineNum(cmp, procName, Optional knd = 0)
     On Error Resume Next
     ret = 0
     ret = cmp.CodeModule.ProcCountLines(procName, knd)
     tryToGetProcLineNum = ret
 End Function
 
-Function getModType(cmp)
+Private Function getModType(cmp)
     Dim ret
     Select Case cmp.Type
         Case 1: ret = "Std"
@@ -217,7 +217,7 @@ Function getModType(cmp)
     getModType = ret
 End Function
 
-Function getKndName(num)
+Private Function getKndName(num)
     Dim ret
     Select Case num
         Case 1: ret = "Let"
@@ -228,7 +228,7 @@ Function getKndName(num)
     getKndName = ret
 End Function
 
-Function getDef(cmp, procName, Optional knd = 0)
+Private Function getDef(cmp, procName, Optional knd = 0)
     With cmp.CodeModule
         lineDef = .procBodyLine(procName, knd)
         lineEnd = .ProcCountLines(procName, knd) + .ProcStartLine(procName, knd)
@@ -256,7 +256,7 @@ Function getDef(cmp, procName, Optional knd = 0)
     getDef = Array(lineDef, cnt, flgComment, flgColon, ret)
 End Function
 
-Sub writeData(procCnt, mdlName, mdlType, procLineNum, procName, ByVal defInfo, sn, currentRow, codelineCnt)
+Private Sub writeData(procCnt, mdlName, mdlType, procLineNum, procName, ByVal defInfo, sn, currentRow, codelineCnt)
     Dim parts, df
     procCnt = procCnt + 1
     df = defInfo
